@@ -2,7 +2,7 @@ use strict;
 use ExtUtils::MakeMaker;
 
 WriteMakefile ( NAME      => 'Net::RRP',
-                VERSION   => '0.02',
+                VERSION   => '0.03',
                 PREREQ_PM => { 'IO::Socket::SSL'  => '0.73',
                                'Net::Daemon::SSL' => '1.00' } );
 

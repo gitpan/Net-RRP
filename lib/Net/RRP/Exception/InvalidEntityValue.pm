@@ -10,7 +10,7 @@ sub new
 {
     my $class = shift;
     $class->SUPER::new ( -value => 502,
-			 -text  => 'Invalid entity value' );
+			 -text  => 'Invalid entity value', -object => shift );
 }
 
 1;

@@ -10,7 +10,7 @@ sub new
 {
     my $class = shift;
     $class->SUPER::new ( -value => 547,
-			 -text  => 'Invalid command sequence' );
+			 -text  => 'Invalid command sequence', -object=> shift );
 }
 
 1;

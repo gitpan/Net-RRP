@@ -17,7 +17,7 @@ Net::RRP::Codec - codec class for serialization/deserialization of Net::RRP::Req
 
 use strict;
 use Net::RRP::Exception::InvalidCommandName;
-$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.3 2000/06/23 19:27:01 mkul Exp $	')[3];
+$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.4 2000/06/26 17:41:14 mkul Exp $	')[3];
 
 use constant CRLF => "\r\n";
 
@@ -63,7 +63,7 @@ sub decodeRequest
     my $requestName = shift @lines;
     my $requestPackageName = 'Net::RRP::Request::' . ucfirst ( $requestName );
     eval "use $requestPackageName";
-    throw Net::RRP::Exception::InvalidCommandName () if $@;
+    throw Net::RRP::Exception::InvalidCommandName ( $buffer ) if $@;
     my $request = $requestPackageName->new();
 
     my $entity;
@@ -71,10 +71,10 @@ sub decodeRequest
     if ( ( $lines[0] ne '.' ) && ( $lines[0] !~ m/^\-/ ) )
     {
 	my $entityLine = shift @lines;
-	$entityLine =~ /^EntityName:(.*)/ || throw Net::RRP::Exception::InvalidEntityValue;
+	$entityLine =~ /^EntityName:(.*)/ || throw Net::RRP::Exception::InvalidEntityValue ( $buffer );
 	my $entityPackageName = 'Net::RRP::Entity::' . ucfirst ( $1 );
 	eval "use $entityPackageName";
-	throw Net::RRP::Exception::InvalidEntityValue () if $@;
+	throw Net::RRP::Exception::InvalidEntityValue ( $buffer ) if $@;
 	$entity = $entityPackageName->new ();
 	$request->setEntity ( $entity );
     }
@@ -83,7 +83,7 @@ sub decodeRequest
 
     while ( ( ( $line = $lines [ $index++ ] ) =~ m/^[^-]/ ) && ( $line ne '.' ) )
     {
-	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ();
+	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ( $buffer );
 	my $old = eval { $entity->getAttribute ( $` ); };
 	if ( $old )
 	{
@@ -101,13 +101,13 @@ sub decodeRequest
 
     while  ( ( ( $line = $lines [ $index++ ] ) =~ m/^-/ ) && ( $line ne '.' ) )
     {
-	$line =~ m/-(.*?):(.*)/ || throw Net::RRP::Exception::InvalidCommandOption();
+	$line =~ m/-(.*?):(.*)/ || throw Net::RRP::Exception::InvalidCommandOption ( $buffer );
 	$request->setOption ( $1 => $2 );
     }
 
     $index--;
 
-    throw Net::RRP::Exception::InvalidCommandSequence if ( $lines [ $index ] ne '.' || $#lines > $index );
+    throw Net::RRP::Exception::InvalidCommandSequence ( $buffer ) if ( $lines [ $index ] ne '.' || $#lines > $index );
 
     $request;
 }
@@ -161,11 +161,11 @@ sub decodeResponse
     my @lines = split CRLF, $buffer;
 
     my $responseHeader = shift @lines;
-    $responseHeader =~ /^(\d+) (.+)/ || throw Net::RRP::Exception::InvalidResponseFormat;
+    $responseHeader =~ /^(\d+) (.+)/ || throw Net::RRP::Exception::InvalidResponseFormat ( $buffer );
 
     my $responsePackageName = 'Net::RRP::Response::n' . $1;
     eval "use $responsePackageName";
-    throw Net::RRP::Exception::InvalidCommandSequence if $@;
+    throw Net::RRP::Exception::InvalidCommandSequence ( $buffer ) if $@;
 
     my $response = $responsePackageName->new();
     $response->setDescription ( $2 );
@@ -175,13 +175,13 @@ sub decodeResponse
 
     while ( ( $line = $lines [ $index++ ] ) && ( $line ne '.' ) )
     {
-	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ();
+	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ( $buffer );
 	$response->setAttribute ( $` => $' );
     }
 
     $index--;
 
-    throw Net::RRP::Exception::InvalidResponseFormat if ( ( ! $line ) || ( $line ne '.' ) || ( $#lines > $index ) );
+    throw Net::RRP::Exception::InvalidResponseFormat ( $buffer ) if ( ( ! $line ) || ( $line ne '.' ) || ( $#lines > $index ) );
 
     $response;
 }

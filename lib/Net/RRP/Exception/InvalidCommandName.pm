@@ -10,7 +10,8 @@ sub new
 {
     my $class = shift;
     $class->SUPER::new ( -text  => 'Invalid command name',
-			 -value => 500 );
+			 -value => 500,
+	                 -object=> shift );
 }
 
 1;

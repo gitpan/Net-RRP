@@ -57,11 +57,9 @@ $Net::RRP::Server::VERSION = '0.1';
 use constant INIT_STATE => 'PRE';
 use constant DONE_STATE => 'DIS';
 use constant STATES     => { PRE  => { Session  => { 1 => 'WFC', 0 => 'WFR' },
-				       Timeout  => { 1 => 'DIS', 0 => 'DIS' } },
-			     DFR  => { Session  => { 1 => 'WFC', 0 => 'DIS' },
-				       Timeout  => { 1 => 'DIS', 0 => 'DIS' } },
-			     WFC  => { Timeout  => { 1 => 'DIS', 0 => 'DIS' },
-				       Quit     => { 1 => 'DIS', 0 => 'DIS' },
+				       Quit     => { 1 => 'DIS', 0 => 'DIS' }, },
+			     DFR  => { Session  => { 1 => 'WFC', 0 => 'DIS' }, },
+			     WFC  => { Quit     => { 1 => 'DIS', 0 => 'DIS' },
 				       Add      => { 1 => 'WFC', 0 => 'WFC' },
 				       Check    => { 1 => 'WFC', 0 => 'WFC' },
 				       Delete   => { 1 => 'WFC', 0 => 'WFC' },
@@ -91,6 +89,15 @@ sub getHelloInfo
       buildDate    => 'Mon Jun 19 14:04:00 MSK 2000' );
 }
 
+sub _logException
+{
+    my ( $this, $exception ) = @_;
+    return unless $this->{debug};
+    $this->Log ( 'debug', "$$: file " . $exception->file . " line " . $exception->line );
+    $this->Log ( 'debug', "$$: trace " . $exception->stacktrace );
+    $this->Log ( 'debug', "$$: catch exception $exception with code " . $exception->value() );
+    $this->Log ( 'debug', "$$: exception object " . $exception->object ) if $exception->object;
+}
 
 sub Run
 {
@@ -108,7 +115,7 @@ sub Run
     {
 	my $response;
 
-	$this->Log ( 'debug', "rrp state at start: $state" );
+	$this->Log ( 'debug', "$$: rrp state at start: $state" );
 
 	try
 	{
@@ -127,12 +134,8 @@ sub Run
 	    catch Net::RRP::Exception with
 	    {
 		my $exception = shift;
-		if ( $this->{debug} )
-		{
-		    $this->Log ( 'debug', "file " . $exception->file . " line " . $exception->line );
-		    $this->Log ( 'debug', "trace " . $exception->stacktrace );
-		    $this->Log ( 'debug', "catch exception $exception with code " . $exception->value() );
-		}
+		$this->_logException ( $exception );
+		last if ( $exception->isa ( 'Net::RRP::Exception::IOError') );
 		$response = Net::RRP::Response->newFromException ( $exception );
 	    };
 	}
@@ -144,7 +147,7 @@ sub Run
 	};
 
 	$this->Log ( 'notice', "$$: send response: %s", $response->getCode );
-	$this->Log ( 'debug', "rrp state at end: $state" );
+	$this->Log ( 'debug',  "$$: rrp state at end: $state" );
 
 	$protocol->sendResponse ( $response );
 
@@ -157,12 +160,3 @@ sub Run
 __END__
 
 base class for all Net::RRP::Server classes
-#	    otherwise
-#	    {
-#		my $exception = new Net::RRP::Exception::ServerError ();
-#		warn "$iter"; $iter++;
-#		$response = newFromException Net::RRP::Response ( $exception );
-#		warn "$iter"; $iter++;
-#		$state = DONE_STATE;
-#		warn "$iter"; $iter++;
-#	    };

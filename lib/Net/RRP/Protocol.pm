@@ -1,7 +1,7 @@
 package Net::RRP::Protocol;
 
 use strict;
-$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.4 2000/06/23 19:27:02 mkul Exp $	')[3];
+$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.5 2000/06/26 17:41:14 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -24,6 +24,7 @@ use IO::Socket::SSL;
 use Net::RRP::Codec;
 use Net::RRP::Toolkit;
 use Net::RRP::Exception::ServerError;
+#use Net::RRP::Exception::IOError;
 
 =head2 new
 
@@ -54,7 +55,7 @@ sub _getLinesFromSocket
 
     my $socket = $this->{socket};
     my $buffer = ( $this->{_lineBuffer} ||= '' );
-    my $signarute = Net::RRP::Codec::CRLF . '.' . Net::RRP::Codec::CRLF;
+    my $signarute = Net::RRP::Codec::CRLF . '\.' . Net::RRP::Codec::CRLF;
     my $line;
 
     my $length;
@@ -65,12 +66,12 @@ sub _getLinesFromSocket
 	if ( $buffer =~ m/$signarute/s )
 	{
 	    $this->{_lineBuffer} = $';
-	    $buffer = $` . $signarute;
+	    $buffer = $` . Net::RRP::Codec::CRLF . '.' . Net::RRP::Codec::CRLF;
 	    last;
 	}
     }
 
-    die "io::error" unless $length;
+    throw Net::RRP::Exception::IOError unless $length;
 
     $buffer;
 }
@@ -111,7 +112,7 @@ Send rrp request to socket. Example:
 
  $protocol->sendRequest ( $request );
 
-throw throw Net::RRP::Exception::ServerError if errors.
+throw throw Net::RRP::Exception::IOError if io errors.
 
 =cut
 
@@ -119,7 +120,7 @@ sub sendRequest
 {
     my ( $this, $request ) = @_;
     Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeRequest ( $request ) ) ||
-	throw Net::RRP::Exception::ServerError;
+	throw Net::RRP::Exception::IOError ();
 }
 
 =head2 sendResponse
@@ -128,7 +129,7 @@ Send rrp response to socket. Example:
 
  $protocol->sendResponse ( $response );
 
-throw throw Net::RRP::Exception::ServerError if errors.
+throw throw Net::RRP::Exception::IOError if io errors.
 
 =cut
 
@@ -136,7 +137,7 @@ sub sendResponse
 {
     my ( $this, $response ) = @_;
     Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeResponse ( $response ) ) ||
-	    throw Net::RRP::Exception::ServerError;
+	throw Net::RRP::Exception::IOError();
 }
 
 =head2 sendHello()
@@ -159,7 +160,7 @@ sub sendHello
     my $version      = $params{version}      || $this->{version};
     my $crlf         = Net::RRP::Codec::CRLF;
     my $buffer       = "$registryName RRP Server version $version" . $crlf . "$buildDate" . $crlf . '.' . $crlf;
-    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $buffer ) || return undef;
+    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $buffer ) || return throw Net::RRP::Exception::IOError;
     
     1;
 }

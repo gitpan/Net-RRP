@@ -39,7 +39,7 @@ sub safeWrite
     while ( $length )
     {
 	$itemLength = Net::RRP::Toolkit::safeCall ( sub { $handler->syswrite ( $buffer, $length ) } );
-	last unless defined $itemLength;
+	last unless $itemLength;
 	$length -= $itemLength;
 	$buffer  = substr ( $buffer, $itemLength ) if $length;
     }
@@ -61,7 +61,7 @@ sub safeRead
     while ( $length )
     {
 	$itemLength = Net::RRP::Toolkit::safeCall ( sub { $handler->sysread ( $subBuffer, $length ) } );
-	last unless defined $itemLength;
+	last unless $itemLength;
 	$length  -= $itemLength;
 	$$buffer .= $subBuffer;
     }

@@ -75,8 +75,10 @@ lib/Net/RRP/Exception/InvalidResponseFormat.pm
 lib/Net/RRP/Exception/MissingRequiredAttribute.pm
 lib/Net/RRP/Exception/MissingCommandOption.pm
 lib/Net/RRP/Exception/MissingRequiredEntity.pm
+lib/Net/RRP/Exception/IOError.pm
 lib/Net/RRP/Exception.pm
 lib/Net/RRP.pm
 Makefile.PL
 README
 test.pl
+server.pl
