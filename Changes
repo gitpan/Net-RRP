@@ -1,6 +1,11 @@
-Revision history for Perl extension Net::Daemon::SSL.
+Revision history for Perl extension Net::RRP.
 
-0.01  Thu Jun 15 23:07:19 MSD 2000
-	- start
+0.01  Tue Jun 20 12:45:00 MSD 2000
+	- client part done
+0.02  Tue Jun 20 12:45:00 MSD 2000
+	- add a Net::RRP class with README content for registration at modules@perl.org
+        - Net::RRP::Exception, Net::RRP::Exception::*
+        - Net::RRP::Server abstract class
+        - rrp state machine at Net::RRP::Server
 
 

@@ -6,5 +6,6 @@ use Net::RRP::Response;
 use Net::RRP::Codec;
 use Net::RRP::Entity;
 use Net::RRP::Protocol;
+use Net::RRP::Server;
 $loaded = 1;
 print "ok 1\n";

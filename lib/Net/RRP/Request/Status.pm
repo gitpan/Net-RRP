@@ -2,6 +2,9 @@ package Net::RRP::Request::Status;
 
 use strict;
 use Net::RRP::Request;
+use Net::RRP::Exception::InvalidCommandOption;
+use Net::RRP::Exception::InvalidEntityValue;
+
 @Net::RRP::Request::Status::ISA = qw(Net::RRP::Request);
 $Net::RRP::Request::Status::VERSION = '0.1';
 
@@ -33,27 +36,28 @@ sub getName { 'Status' };
 
 =head2 setEntity
 
-say "die" unless entity is Net::RRP::Entity::Domain or Net::RRP::Entity::NameServer
+throw Net::RRP::Exception::InvalidEntityValue unless entity is Net::RRP::Entity::Domain or Net::RRP::Entity::NameServer
 
 =cut
 
 sub setEntity
 {
     my ( $this, $entity ) = @_;
-    my $ref = ref ( $entity ) || die "wrong entity";
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } || die "wrong entity";
+    my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue ();
+    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } ||
+	throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
 =head2 setOption
 
-say "die"
+throw Net::RRP::Exception::InvalidCommandOption
 
 =cut
 
 sub setOption
 {
-    die "wrong option";
+    throw Net::RRP::Exception::InvalidCommandOption ();
 }
 
 =head1 AUTHOR AND COPYRIGHT
@@ -73,7 +77,9 @@ sub setOption
 =head1 SEE ALSO
 
 L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, L<Net::RRP::Entity::Domain(3)>,
-L<Net::RRP::Entity::NameServer(3)>, RFC 2832
+L<Net::RRP::Entity::NameServer(3)>, RFC 2832,
+L<Net::RRP::Exception::InvalidCommandOption(3)>,
+L<Net::RRP::Exception::InvalidEntityValue(3)>
 
 =cut
 

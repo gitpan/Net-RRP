@@ -1,7 +1,9 @@
 package Net::RRP::Entity;
 
 use strict;
-$Net::RRP::Entity::VERSION = (split " ", '# 	$Id: Entity.pm,v 1.1 2000/06/20 07:53:28 mkul Exp $	')[3];
+use Net::RRP::Exception::MissingRequiredAttribute;
+
+$Net::RRP::Entity::VERSION = '0.02';
 
 =head1 NAME
 
@@ -72,12 +74,14 @@ Return a value of $attributeName attribute. Example:
 
  print STDERR $entity->getAttribute ( 'NameServer' )->[ 0 ];
 
+Can throw Net::RRP::Exception::MissingRequiredAttribute exception
+
 =cut
 
 sub getAttribute
 {
     my ( $this, $attributeName ) = @_;
-    $this->{attributes}->{$attributeName};
+    $this->{attributes}->{$attributeName} || throw Net::RRP::Exception::MissingRequiredAttribute();
 }
 
 =head2 getAttributes
@@ -116,7 +120,8 @@ sub getAttributes
 
 =head1 SEE ALSO
 
-L<Net::RRP::Request(3)>, L<Net::RRP::Response(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Request(3)>, L<Net::RRP::Response(3)>, L<Net::RRP::Codec(3)>, RFC 2832,
+L<Net::RRP::Exception::MissingRequiredAttribute(3)>
 
 =cut
 

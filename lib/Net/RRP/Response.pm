@@ -1,7 +1,7 @@
 package Net::RRP::Response;
 
 use strict;
-$Net::RRP::Response::VERSION = (split " ", '# 	$Id: Response.pm,v 1.1 2000/06/20 07:53:28 mkul Exp $	')[3];
+$Net::RRP::Response::VERSION = (split " ", '# 	$Id: Response.pm,v 1.4 2000/06/23 19:27:02 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -38,6 +38,24 @@ sub new
     my %options = @_ ? @_ : ( attributes  => {},
 			      description => '' );
     bless { %options }, $class;
+}
+
+=head2 newFromException
+
+Construct new response object from exception infomation;
+
+ my $response = newFromException Net::RRP::Response ( new Net::RRP::Exception ( "description", $code ) );
+
+=cut
+
+sub newFromException
+{
+    my ( $class, $exception ) = @_;
+    my $code = $exception->value;
+    my $packageName = "Net\:\:RRP\:\:Response\:\:n$code";
+    eval "use $packageName;"; die $@ if $@;
+    $packageName->new ( description => $exception->text,
+			attributes  => $exception->object );
 }
 
 =head2 getCode
@@ -146,7 +164,7 @@ sub getAttributes
 
 =head1 SEE ALSO
 
-L<Net::RRP::Entity(3)>, L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Entity(3)>, L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, L<Net::RRP::Exception(3)>, RFC 2832
 
 =cut
 

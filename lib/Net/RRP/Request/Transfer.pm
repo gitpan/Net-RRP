@@ -2,6 +2,10 @@ package Net::RRP::Request::Transfer;
 
 use strict;
 use Net::RRP::Request;
+use Net::RRP::Exception::InvalidCommandOption;
+use Net::RRP::Exception::InvalidEntityValue;
+use Net::RRP::Exception::InvalidOptionValue;
+
 @Net::RRP::Request::Transfer::ISA = qw(Net::RRP::Request);
 $Net::RRP::Request::Transfer::VERSION = '0.1';
 
@@ -35,15 +39,15 @@ sub getName { 'Transfer' };
 
 =head2 setEntity
 
-say "die" unless entity is Net::RRP::Entity::Domain
+throw Net::RRP::Exception::InvalidEntityValue unless entity is Net::RRP::Entity::Domain
 
 =cut
 
 sub setEntity
 {
     my ( $this, $entity ) = @_;
-    my $ref = ref ( $entity ) || die "wrong entity";
-    $ref eq 'Net::RRP::Entity::Domain' || die "wrong entity";
+    my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue ();
+    $ref eq 'Net::RRP::Entity::Domain' || throw throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
@@ -56,8 +60,8 @@ Pass only Approve option and yes/no value
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    die "wrong option" if $key ne "Approve";
-    die "wrong option" unless $value =~ /^Yes|No$/;
+    throw Net::RRP::Exception::InvalidCommandOption () if $key ne "Approve";
+    throw Net::RRP::Exception::InvalidOptionValue   () unless $value =~ /^Yes|No$/;
     $this->SUPER::setOption ( $key => $value );
 }
 
@@ -78,7 +82,8 @@ sub setOption
 =head1 SEE ALSO
 
 L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, L<Net::RRP::Entity::Domain(3)>,
-RFC 2832
+RFC 2832,L<Net::RRP::Exception::InvalidCommandOption(3)>,
+L<Net::RRP::Exception::InvalidEntityValue(3)>, L<Net::RRP::Exception::InvalidOptionValue(3)>
 
 =cut
 

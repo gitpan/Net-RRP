@@ -2,6 +2,9 @@ package Net::RRP::Request::Session;
 
 use strict;
 use Net::RRP::Request;
+use Net::RRP::Exception::InvalidCommandOption;
+use Net::RRP::Exception::InvalidEntityValue;
+
 @Net::RRP::Request::Session::ISA = qw(Net::RRP::Request);
 $Net::RRP::Request::Session::VERSION = '0.1';
 
@@ -35,13 +38,13 @@ sub getName { 'Session' };
 
 =head2 setEntity
 
-say "die" immediate
+throw Net::RRP::Exception::InvalidEntityValue immediate
 
 =cut
 
 sub setEntity
 {
-    die "you can't setup entity for session request";
+    throw Net::RRP::Exception::InvalidEntityValue ();
 }
 
 =head2 setOption
@@ -53,7 +56,7 @@ Pass only Id, Password, NewPassword options
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    { Id => 1, Password => 1, NewPassword => 1 }->{ $key } || die "wrong option";
+    { Id => 1, Password => 1, NewPassword => 1 }->{ $key } || throw Net::RRP::Exception::InvalidCommandOption ();
     $this->SUPER::setOption ( $key => $value );
 }
 
@@ -73,7 +76,9 @@ sub setOption
 
 =head1 SEE ALSO
 
-L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, RFC 2832,
+L<Net::RRP::Exception::InvalidCommandOption(3)>,
+L<Net::RRP::Exception::InvalidEntityValue(3)>
 
 =cut
 

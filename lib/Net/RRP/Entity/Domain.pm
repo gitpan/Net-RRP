@@ -2,6 +2,7 @@ package Net::RRP::Entity::Domain;
 
 use strict;
 use Net::RRP::Entity;
+use Net::RRP::Exception::InvalidAttributeName;
 @Net::RRP::Entity::Domain::ISA = qw(Net::RRP::Entity);
 $Net::RRP::Entity::Domain::VERSION = '0.1';
 
@@ -41,7 +42,7 @@ Add check constraint to attributes. Only DomainName and NameServer attributes ca
 sub setAttribute
 {
     my ( $this, $key, $value ) = @_;
-    { DomainName => 1, NameServer => 1 }->{ $key } || die "wrong attribute";
+    { DomainName => 1, NameServer => 1 }->{ $key } || throw Net::RRP::Exception::InvalidAttributeName ();
     $this->SUPER::setAttribute ( $key => $value );
 }
 
@@ -63,7 +64,8 @@ sub setAttribute
 
 =head1 SEE ALSO
 
-L<Net::RRP::Entity(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Entity(3)>, L<Net::RRP::Codec(3)>, RFC 2832,
+L<Net::RRP::Exception::InvalidAttributeName(3)>
 
 =cut
 

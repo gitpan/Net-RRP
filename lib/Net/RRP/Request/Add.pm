@@ -2,6 +2,10 @@ package Net::RRP::Request::Add;
 
 use strict;
 use Net::RRP::Request;
+use Net::RRP::Exception::InvalidEntityValue;
+use Net::RRP::Exception::InvalidCommandOption;
+use Net::RRP::Exception::InvalidOptionValue;
+
 @Net::RRP::Request::Add::ISA = qw(Net::RRP::Request);
 $Net::RRP::Request::Add::VERSION = '0.1';
 
@@ -39,21 +43,23 @@ sub getName { 'Add' };
 
 =head2 setEntity
 
-say "die" unless entity is Net::RRP::Entity::Domain or Net::RRP::Entity::NameServer
+throw Net::RRP::Exception::InvalidEntityValue exception unless entity is Net::RRP::Entity::Domain or Net::RRP::Entity::NameServer
 
 =cut
 
 sub setEntity
 {
     my ( $this, $entity ) = @_;
-    my $ref = ref ( $entity ) || die "wrong entity";
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } || die "wrong entity";
+    my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue();
+    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } || 
+	throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
 =head2 setOption
 
-Pass only Period option
+Pass only Period option. Throw Net::RRP::Exception::InvalidCommandOption exception at other options.
+Throw Net::RRP::Exception::InvalidOptionValue unless passed value is numeric.
 
 =cut
 
@@ -61,9 +67,10 @@ sub setOption
 {
     my ( $this, $key, $value ) = @_;
     my $ref = ref ( $this->getEntity );
-    die "wrong option" unless $ref;
-    die "wrong option" if ( ( $ref ) && ( $ref eq 'Net::RRP::Entity::NameServer' ) );
-    { Period => 1 }->{ $key } || die "wrong option";
+    throw Net::RRP::Exception::InvalidCommandOption () unless $ref;
+    throw Net::RRP::Exception::InvalidCommandOption () if ( $ref eq 'Net::RRP::Entity::NameServer' );
+    $key eq 'Period'   || throw Net::RRP::Exception::InvalidCommandOption ();
+    $value =~ m/^\d+$/ || throw Net::RRP::Exception::InvalidOptionValue ();
     $this->SUPER::setOption ( $key => $value );
 }
 
@@ -84,7 +91,10 @@ sub setOption
 =head1 SEE ALSO
 
 L<Net::RRP::Request(3)>, L<Net::RRP::Codec(3)>, L<Net::RRP::Entity::Domain(3)>,
-L<Net::RRP::Entity::NameServer(3)>, RFC 2832
+L<Net::RRP::Entity::NameServer(3)>, RFC 2832,
+L<Net::RRP::Exception::InvalidEntityValue(3)>,
+L<Net::RRP::Exception::InvalidCommandOption(3)>,
+L<Net::RRP::Exception::InvalidOptionValue(3)>
 
 =cut
 

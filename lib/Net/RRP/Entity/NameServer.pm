@@ -2,6 +2,7 @@ package Net::RRP::Entity::NameServer;
 
 use strict;
 use Net::RRP::Entity;
+use Net::RRP::Exception::InvalidAttributeName;
 @Net::RRP::Entity::NameServer::ISA = qw(Net::RRP::Entity);
 $Net::RRP::Entity::NameServer::VERSION = '0.1';
 
@@ -41,7 +42,7 @@ Add check constraint to attributes. Only NameServer and IPAddress attributes can
 sub setAttribute
 {
     my ( $this, $key, $value ) = @_;
-    { NameServer => 1, IPAddress => 1, NewNameServer => 1 }->{ $key } || die "wrong attribute";
+    { NameServer => 1, IPAddress => 1, NewNameServer => 1 }->{ $key } || throw Net::RRP::Exception::InvalidAttributeName;
     $this->SUPER::setAttribute ( $key => $value );
 }
 
@@ -63,7 +64,7 @@ sub setAttribute
 
 =head1 SEE ALSO
 
-L<Net::RRP::Entity(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Entity(3)>, L<Net::RRP::Codec(3)>, RFC 2832, L<Net::RRP::Exception::InvalidAttributeName(3)>
 
 =cut
 

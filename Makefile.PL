@@ -2,8 +2,9 @@ use strict;
 use ExtUtils::MakeMaker;
 
 WriteMakefile ( NAME      => 'Net::RRP',
-                VERSION   => '0.01',
-                PREREQ_PM => { 'IO::Socket::SSL' => '0.73' } );
+                VERSION   => '0.02',
+                PREREQ_PM => { 'IO::Socket::SSL'  => '0.73',
+                               'Net::Daemon::SSL' => '1.00' } );
 
 package MY;
 

@@ -1,7 +1,9 @@
 package Net::RRP::Request;
 
 use strict;
-$Net::RRP::Request::VERSION = (split " ", '# 	$Id: Request.pm,v 1.1 2000/06/20 07:53:28 mkul Exp $	')[3];
+use Net::RRP::Exception::MissingCommandOption;
+use Net::RRP::Exception::MissingRequiredEntity;
+$Net::RRP::Request::VERSION = (split " ", '# 	$Id: Request.pm,v 1.2 2000/06/22 11:02:31 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -70,12 +72,14 @@ Return a entity of this request. Example:
 
  my $entity = $request->getEntity();
 
+Can throw Net::RRP::Exception::MissingRequiredEntity exception
+
 =cut
 
 sub getEntity
 {
     my $this = shift;
-    $this->{entity};
+    $this->{entity} || throw Net::RRP::Exception::MissingRequiredEntity();
 }
 
 =head2 getOption
@@ -85,12 +89,14 @@ Return a request option by $optionName. Example:
  print $request->getOption ( $optionName ); 
  print $request->getOption ( 'ttt' ); # no '-' here
 
+Can throw Net::RRP::Exception::MissingCommandOption() exception.
+
 =cut
 
 sub getOption
 {
     my ( $this, $optionName ) = @_;
-    $this->{options}->{$optionName}
+    $this->{options}->{$optionName} || throw Net::RRP::Exception::MissingCommandOption();
 }
 
 =head2 setOption
@@ -162,7 +168,8 @@ sub isSuccessResponse
 
 =head1 SEE ALSO
 
-L<Net::RRP::Entity(3)>, L<Net::RRP::Response(3)>, L<Net::RRP::Codec(3)>, RFC 2832
+L<Net::RRP::Entity(3)>, L<Net::RRP::Response(3)>, L<Net::RRP::Codec(3)>, RFC 2832,
+L<Net::RRP::Exception::MissingCommandOption(3)>, L<Net::RRP::Exception::MissingRequiredEntity(3)>
 
 =cut
 

@@ -1,7 +1,7 @@
 package Net::RRP::Protocol;
 
 use strict;
-$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.1 2000/06/20 07:53:28 mkul Exp $	')[3];
+$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.4 2000/06/23 19:27:02 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -23,6 +23,7 @@ socket ( IO::Socket::SSL )
 use IO::Socket::SSL;
 use Net::RRP::Codec;
 use Net::RRP::Toolkit;
+use Net::RRP::Exception::ServerError;
 
 =head2 new
 
@@ -52,13 +53,13 @@ sub _getLinesFromSocket
     my $this = shift;
 
     my $socket = $this->{socket};
-    #$socket->blocking ( 0 ) || die "Can't set non blocking io for socket " . fileno ( $socket );
-
     my $buffer = ( $this->{_lineBuffer} ||= '' );
     my $signarute = Net::RRP::Codec::CRLF . '.' . Net::RRP::Codec::CRLF;
     my $line;
 
-    while ( $socket->sysread ( $line, 64 ) )
+    my $length;
+
+    while ( $length = Net::RRP::Toolkit::safeCall ( sub { $socket->sysread ( $line, 64 ) } ) )
     {
 	$buffer .= $line;
 	if ( $buffer =~ m/$signarute/s )
@@ -68,6 +69,8 @@ sub _getLinesFromSocket
 	    last;
 	}
     }
+
+    die "io::error" unless $length;
 
     $buffer;
 }
@@ -108,14 +111,15 @@ Send rrp request to socket. Example:
 
  $protocol->sendRequest ( $request );
 
-Say "die" if errors.
+throw throw Net::RRP::Exception::ServerError if errors.
 
 =cut
 
 sub sendRequest
 {
     my ( $this, $request ) = @_;
-    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeRequest ( $request ) );
+    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeRequest ( $request ) ) ||
+	throw Net::RRP::Exception::ServerError;
 }
 
 =head2 sendResponse
@@ -124,14 +128,15 @@ Send rrp response to socket. Example:
 
  $protocol->sendResponse ( $response );
 
-Say "die" if errors.
+throw throw Net::RRP::Exception::ServerError if errors.
 
 =cut
 
 sub sendResponse
 {
     my ( $this, $response ) = @_;
-    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeResponse ( $response ) );
+    Net::RRP::Toolkit::safeWrite ( $this->{socket}, $this->{codec}->encodeResponse ( $response ) ) ||
+	    throw Net::RRP::Exception::ServerError;
 }
 
 =head2 sendHello()

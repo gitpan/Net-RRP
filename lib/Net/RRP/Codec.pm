@@ -16,7 +16,8 @@ Net::RRP::Codec - codec class for serialization/deserialization of Net::RRP::Req
 =cut
 
 use strict;
-$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.1 2000/06/20 07:53:28 mkul Exp $	')[3];
+use Net::RRP::Exception::InvalidCommandName;
+$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.3 2000/06/23 19:27:01 mkul Exp $	')[3];
 
 use constant CRLF => "\r\n";
 
@@ -44,7 +45,7 @@ The real return object is a instance of Net::RRP::Request::$requestName class. T
 required class ( package ). Next, we a parse the Entity part of RRP request and construct the instance of
 Net::RRP::Entity::$entityName class ( with dynamic loading of this class ) and add entity attributes to 
 this object. After this, parser process the rrp request options and add it's to request object. When all 
-done, method return a constructed rrp request object. This method say "die" at any errors.
+done, method return a constructed rrp request object. This method say throw() at any errors.
 
 Example:
 
@@ -62,21 +63,19 @@ sub decodeRequest
     my $requestName = shift @lines;
     my $requestPackageName = 'Net::RRP::Request::' . ucfirst ( $requestName );
     eval "use $requestPackageName";
-    die $@ if $@;
-    my $request = eval "new $requestPackageName();";
-    die $@ if $@;
+    throw Net::RRP::Exception::InvalidCommandName () if $@;
+    my $request = $requestPackageName->new();
 
     my $entity;
 
-    if ( $lines[0] ne '.' ) 
+    if ( ( $lines[0] ne '.' ) && ( $lines[0] !~ m/^\-/ ) )
     {
 	my $entityLine = shift @lines;
-	$entityLine =~ /^EntityName:(.*)/ || die "Entity name not found";
+	$entityLine =~ /^EntityName:(.*)/ || throw Net::RRP::Exception::InvalidEntityValue;
 	my $entityPackageName = 'Net::RRP::Entity::' . ucfirst ( $1 );
 	eval "use $entityPackageName";
-	die $@ if $@;
-	$entity = eval "new $entityPackageName()";
-	die $@ if $@;
+	throw Net::RRP::Exception::InvalidEntityValue () if $@;
+	$entity = $entityPackageName->new ();
 	$request->setEntity ( $entity );
     }
 
@@ -84,9 +83,9 @@ sub decodeRequest
 
     while ( ( ( $line = $lines [ $index++ ] ) =~ m/^[^-]/ ) && ( $line ne '.' ) )
     {
-	$line =~ m/:/ || die "wrong attribute format";
-	my $old = $entity->getAttribute ( $` );
-	if ( $old ) 
+	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ();
+	my $old = eval { $entity->getAttribute ( $` ); };
+	if ( $old )
 	{
 	    $old = [ $old ] unless ref ( $old );
 	    push @$old, $';
@@ -102,13 +101,13 @@ sub decodeRequest
 
     while  ( ( ( $line = $lines [ $index++ ] ) =~ m/^-/ ) && ( $line ne '.' ) )
     {
-	$line =~ m/-(.*?):(.*)/ || die "wrong option format";
+	$line =~ m/-(.*?):(.*)/ || throw Net::RRP::Exception::InvalidCommandOption();
 	$request->setOption ( $1 => $2 );
     }
 
     $index--;
 
-    die "wrong request format" if ( $lines [ $index ] ne '.' || $#lines > $index );
+    throw Net::RRP::Exception::InvalidCommandSequence if ( $lines [ $index ] ne '.' || $#lines > $index );
 
     $request;
 }
@@ -148,7 +147,7 @@ sub encodeRequest
 
 This method constructs the instance of Net::RRP::Response::n$NNN class from input buffer,
 where the $NNN is a response number ( the Net::RRP::Response::n$NNN loads dynamic ). This 
-method say "die" ad any errors;
+method say throw() at any errors;
 
 Example:
 my $response = $codec->decodeResponse ( $buffer );
@@ -158,12 +157,16 @@ my $response = $codec->decodeResponse ( $buffer );
 sub decodeResponse
 {
     my ( $this, $buffer ) = @_;
+
     my @lines = split CRLF, $buffer;
+
     my $responseHeader = shift @lines;
-    $responseHeader =~ /^(\d+) (.+)/ || die "Wrong response format";
+    $responseHeader =~ /^(\d+) (.+)/ || throw Net::RRP::Exception::InvalidResponseFormat;
+
     my $responsePackageName = 'Net::RRP::Response::n' . $1;
     eval "use $responsePackageName";
-    die $@ if $@;
+    throw Net::RRP::Exception::InvalidCommandSequence if $@;
+
     my $response = $responsePackageName->new();
     $response->setDescription ( $2 );
 
@@ -172,13 +175,13 @@ sub decodeResponse
 
     while ( ( $line = $lines [ $index++ ] ) && ( $line ne '.' ) )
     {
-	$line =~ m/:/ || die "wrong attribute format";
+	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ();
 	$response->setAttribute ( $` => $' );
     }
 
     $index--;
 
-    die "wrong response format" if ( ( ! $line ) || ( $line ne '.' ) || ( $#lines > $index ) );
+    throw Net::RRP::Exception::InvalidResponseFormat if ( ( ! $line ) || ( $line ne '.' ) || ( $#lines > $index ) );
 
     $response;
 }
@@ -197,8 +200,10 @@ sub encodeResponse
 {
     my ( $this, $response ) = @_;
     my $buffer = $response->getCode . ' ' . $response->getDescription . CRLF;
-    my $attributes = $response->getAttributes;
-    $buffer .= join ( CRLF, map { "$_:" . $attributes->{$_} } keys %$attributes ) . CRLF;
+    if ( my $attributes = $response->getAttributes )
+    {
+	$buffer .= join ( CRLF, map { "$_:" . $attributes->{$_} } keys %$attributes ) . CRLF;
+    }
     $buffer .= '.' . CRLF;
     $buffer;
 }

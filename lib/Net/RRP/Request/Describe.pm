@@ -32,25 +32,25 @@ sub getName { 'Describe' };
 
 =head2 setEntity
 
-say "die" immediate
+throw Net::RRP::Exception::InvalidEntityValue immediate
 
 =cut
 
 sub setEntity
 {
-    die "you can't setup entity for describe request";
+    throw Net::RRP::Exception::InvalidEntityValue ();
 }
 
 =head2 setOption
 
-Pass only Target option with Protocol value
+Pass only Target option with Protocol value. Throw Net::RRP::Exception::InvalidCommandOption in other case.
 
 =cut
 
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    die "wrong option" unless ( ( $key eq 'Target' ) && ( $value eq 'Protocol' ) );
+    throw Net::RRP::Exception::InvalidCommandOption () unless ( ( $key eq 'Target' ) && ( $value eq 'Protocol' ) );
     $this->SUPER::setOption ( $key => $value );
 }
 

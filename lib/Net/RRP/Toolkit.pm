@@ -7,7 +7,7 @@ require Exporter;
 
 @Net::RRP::Toolkit::ISA = qw(Exporter);
 @Net::RRP::Toolkit::EXPORT_OK = qw(decodeTilde safeCall safeCopy lowerKeys pathSubtract);
-$Net::RRP::Toolkit::VERSION = (split " ", '# 	$Id: Toolkit.pm,v 1.15 2000/06/09 13:53:22 mkul Exp $	')[3];
+$Net::RRP::Toolkit::VERSION = (split " ", '# 	$Id: Toolkit.pm,v 1.1 2000/06/20 12:44:05 mkul Exp $	')[3];
 
 sub decodeTilde
 {
