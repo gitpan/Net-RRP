@@ -56,7 +56,7 @@ Pass only Id, Password, NewPassword options
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    { Id => 1, Password => 1, NewPassword => 1 }->{ $key } || throw Net::RRP::Exception::InvalidCommandOption ();
+    { id => 1, password => 1, newpassword => 1 }->{ lc ( $key ) } || throw Net::RRP::Exception::InvalidCommandOption ();
     $this->SUPER::setOption ( $key => $value );
 }
 

@@ -51,14 +51,19 @@ sub setEntity
 {
     my ( $this, $entity ) = @_;
     my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue();
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } || 
-	throw Net::RRP::Exception::InvalidEntityValue ();
+    {  'Net::RRP::Entity::Domain'     => 1,
+       'Net::RRP::Entity::NameServer' => 1,
+       'Net::RRP::Entity::Registrar'  => 1,
+       'Net::RRP::Entity::Replica'    => 1,
+       'Net::RRP::Entity::Owner'      => 1,
+       'Net::RRP::Entity::Contact'    => 1 }->{ $ref } || throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
 =head2 setOption
 
-Pass only Period option. Throw Net::RRP::Exception::InvalidCommandOption exception at other options.
+Support for Registrar and Serial options.
+pass Period option. Throw Net::RRP::Exception::InvalidCommandOption exception at other options.
 Throw Net::RRP::Exception::InvalidOptionValue unless passed value is numeric.
 
 =cut
@@ -66,10 +71,12 @@ Throw Net::RRP::Exception::InvalidOptionValue unless passed value is numeric.
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'registrar';
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'serial';
     my $ref = ref ( $this->getEntity );
     throw Net::RRP::Exception::InvalidCommandOption () unless $ref;
     throw Net::RRP::Exception::InvalidCommandOption () if ( $ref eq 'Net::RRP::Entity::NameServer' );
-    $key eq 'Period'   || throw Net::RRP::Exception::InvalidCommandOption ();
+    lc ( $key ) eq 'period' || throw Net::RRP::Exception::InvalidCommandOption ();
     $value =~ m/^\d+$/ || throw Net::RRP::Exception::InvalidOptionValue ();
     $this->SUPER::setOption ( $key => $value );
 }

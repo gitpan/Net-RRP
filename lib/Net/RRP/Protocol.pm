@@ -1,7 +1,7 @@
 package Net::RRP::Protocol;
 
 use strict;
-$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.5 2000/06/26 17:41:14 mkul Exp $	')[3];
+$Net::RRP::Protocol::VERSION = (split " ", '# 	$Id: Protocol.pm,v 1.9 2000/10/12 12:06:50 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -20,11 +20,12 @@ socket ( IO::Socket::SSL )
 
 =cut
 
-use IO::Socket::SSL;
+#use IO::Socket::SSL;
+use IO::Socket::INET;
 use Net::RRP::Codec;
 use Net::RRP::Toolkit;
 use Net::RRP::Exception::ServerError;
-#use Net::RRP::Exception::IOError;
+use Net::RRP::Exception::IOError;
 
 =head2 new
 
@@ -43,7 +44,7 @@ sub new
 {
     my ( $class, %options ) = @_;
     my $this = bless{}, $class;
-    $this->{socket} = $options{socket} || new IO::Socket::SSL ( %options );
+    $this->{socket} = $options{socket} || new IO::Socket::INET ( %options );
     $this->{socket} || die "can't get socket: $!\n";
     $this->{codec} = new Net::RRP::Codec();
     $this;
@@ -68,7 +69,9 @@ sub _getLinesFromSocket
 	    $this->{_lineBuffer} = $';
 	    $buffer = $` . Net::RRP::Codec::CRLF . '.' . Net::RRP::Codec::CRLF;
 	    last;
-	}
+	} else {
+	    $this->{_lineBuffer} = $buffer;
+        }
     }
 
     throw Net::RRP::Exception::IOError unless $length;
@@ -96,7 +99,7 @@ sub getRequest
 Get Net::RRP::Response class instance from socket. See L<Net::RRP::Codec(3)> for
 more details about parsing of stream && get Net::RRP::Response instance.
 
- my $response = $protocol->getRequest ();
+ my $response = $protocol->getResponse ();
 
 =cut
 
@@ -160,8 +163,9 @@ sub sendHello
     my $version      = $params{version}      || $this->{version};
     my $crlf         = Net::RRP::Codec::CRLF;
     my $buffer       = "$registryName RRP Server version $version" . $crlf . "$buildDate" . $crlf . '.' . $crlf;
+
     Net::RRP::Toolkit::safeWrite ( $this->{socket}, $buffer ) || return throw Net::RRP::Exception::IOError;
-    
+
     1;
 }
 

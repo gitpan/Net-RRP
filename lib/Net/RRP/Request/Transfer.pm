@@ -60,8 +60,8 @@ Pass only Approve option and yes/no value
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    throw Net::RRP::Exception::InvalidCommandOption () if $key ne "Approve";
-    throw Net::RRP::Exception::InvalidOptionValue   () unless $value =~ /^Yes|No$/;
+    throw Net::RRP::Exception::InvalidCommandOption () if lc ( $key ) ne "approve";
+    throw Net::RRP::Exception::InvalidOptionValue   () unless lc ( $value ) =~ /^yes|no$/;
     $this->SUPER::setOption ( $key => $value );
 }
 

@@ -42,7 +42,8 @@ Add check constraint to attributes. Only DomainName and NameServer attributes ca
 sub setAttribute
 {
     my ( $this, $key, $value ) = @_;
-    { DomainName => 1, NameServer => 1 }->{ $key } || throw Net::RRP::Exception::InvalidAttributeName ();
+    { domainname => 1, nameserver => 1, status => 1, whoisinfo => 1, owner => 1 }->{ lc ( $key ) } ||
+	throw Net::RRP::Exception::InvalidAttributeName ();
     $this->SUPER::setAttribute ( $key => $value );
 }
 

@@ -48,19 +48,27 @@ sub setEntity
 {
     my ( $this, $entity ) = @_;
     my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue ();
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } ||
-	throw Net::RRP::Exception::InvalidEntityValue ();
+    { 'Net::RRP::Entity::Domain'     => 1,
+      'Net::RRP::Entity::NameServer' => 1,
+      'Net::RRP::Entity::Registrar'  => 1,
+      'Net::RRP::Entity::Replica'    => 1,
+      'Net::RRP::Entity::Owner'      => 1,
+      'Net::RRP::Entity::Contact'    => 1 }->{ $ref } || throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
 =head2 setOption
 
-throw Net::RRP::Exception::InvalidCommandOption
+Support for Registrar and Serial options, throw Net::RRP::Exception::InvalidCommandOption
+if other option
 
 =cut
 
 sub setOption
 {
+    my ( $this, $key, $value ) = @_;
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'registrar';
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'serial';
     throw Net::RRP::Exception::InvalidCommandOption ()
 }
 

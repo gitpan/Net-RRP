@@ -9,7 +9,7 @@ use Net::RRP::Exception;
 sub new
 {
     my $class = shift;
-    $class->SUPER::new ( -text  => 'Invalid command name',
+    $class->SUPER::new ( -text  => 'Input/output error',
 			 -value => 500 );
 }
 

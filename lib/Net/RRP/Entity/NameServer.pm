@@ -42,8 +42,20 @@ Add check constraint to attributes. Only NameServer and IPAddress attributes can
 sub setAttribute
 {
     my ( $this, $key, $value ) = @_;
-    { NameServer => 1, IPAddress => 1, NewNameServer => 1 }->{ $key } || throw Net::RRP::Exception::InvalidAttributeName;
+    { nameserver => 1, ipaddress => 1, newnameserver => 1 }->{ lc ( $key ) } || throw Net::RRP::Exception::InvalidAttributeName;
     $this->SUPER::setAttribute ( $key => $value );
+}
+
+=head2 getPrimaryAttributeValue
+
+return a "primary" attribute value
+
+=cut
+
+sub getPrimaryAttributeValue
+{
+    my $this = shift;
+    $this->getAttribute ( $this->getName );
 }
 
 1;

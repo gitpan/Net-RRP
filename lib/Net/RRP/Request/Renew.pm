@@ -56,7 +56,7 @@ Pass only Period && CurrentExpirationYear option. Throw Net::RRP::Exception::Inv
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    { Period => 1, CurrentExpirationYear => 1 }->{ $key } || throw Net::RRP::Exception::InvalidCommandOption ()
+    { period => 1, currentexpirationyear => 1 }->{ lc ( $key ) } || throw Net::RRP::Exception::InvalidCommandOption ();
     $this->SUPER::setOption ( $key => $value );
 }
 

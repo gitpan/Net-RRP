@@ -10,8 +10,7 @@ sub new
 {
     my $class = shift;
     $class->SUPER::new ( -value => 505,
-			 -text  => 'Invalid attribute value syntax',
-                         -object=> shift );
+			 -text  => 'Invalid attribute value syntax' );
 }
 
 1;

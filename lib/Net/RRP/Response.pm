@@ -1,7 +1,7 @@
 package Net::RRP::Response;
 
 use strict;
-$Net::RRP::Response::VERSION = (split " ", '# 	$Id: Response.pm,v 1.4 2000/06/23 19:27:02 mkul Exp $	')[3];
+$Net::RRP::Response::VERSION = (split " ", '# 	$Id: Response.pm,v 1.6 2000/08/24 14:46:47 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -54,8 +54,7 @@ sub newFromException
     my $code = $exception->value;
     my $packageName = "Net\:\:RRP\:\:Response\:\:n$code";
     eval "use $packageName;"; die $@ if $@;
-    $packageName->new ( description => $exception->text,
-			attributes  => $exception->object );
+    $packageName->new ( description => $exception->text || ' ' );
 }
 
 =head2 getCode
@@ -112,7 +111,7 @@ Return a named response attribute. Example:
 sub getAttribute
 {
     my ( $this, $optionName ) = @_;
-    $this->{attrubutes}->{$optionName}
+    $this->{attributes}->{$optionName}
 }
 
 =head2 setAttribute
@@ -126,8 +125,8 @@ Setup a named attribute. Example:
 sub setAttribute
 {
     my ( $this, $optionName, $optionValue ) = @_;
-    my $old = $this->{attrubutes}->{$optionName};
-    $this->{attrubutes}->{$optionName} = $optionValue;
+    my $old = $this->{attributes}->{$optionName};
+    $this->{attributes}->{$optionName} = $optionValue;
     $old;
 }
 
@@ -143,7 +142,7 @@ Get response attributes hash ref. Example:
 sub getAttributes
 {
     my $this = shift;
-    $this->{attrubutes}
+    $this->{attributes}
 }
 
 1;

@@ -10,7 +10,7 @@ sub new
 {
     my $class = shift;
     $class->SUPER::new ( -value => -1,
-			 -text  => 'Invalid response format', -object => shift );
+			 -text  => 'Invalid response format' );
 }
 
 1;

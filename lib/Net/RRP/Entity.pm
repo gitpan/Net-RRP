@@ -2,6 +2,7 @@ package Net::RRP::Entity;
 
 use strict;
 use Net::RRP::Exception::MissingRequiredAttribute;
+use Net::RRP::Toolkit;
 
 $Net::RRP::Entity::VERSION = '0.02';
 
@@ -33,7 +34,7 @@ This is a constructor. Example:
 sub new
 {
     my $class = shift;
-    bless { attributes => { @_ } }, $class;
+    bless { attributes => Net::RRP::Toolkit::lowerKeys ( { @_ } ) }, $class;
 }
 
 =head2 getName
@@ -63,6 +64,7 @@ Setup attribte with name $attributeName to a $attributeValue. $attributeValue mu
 sub setAttribute
 {
     my ( $this, $attributeName, $attributeValue ) = @_;
+    $attributeName = lc ( $attributeName );
     my $old = $this->{attributes}->{$attributeName};
     $this->{attributes}->{$attributeName} = $attributeValue;
     $old;
@@ -81,7 +83,7 @@ Can throw Net::RRP::Exception::MissingRequiredAttribute exception
 sub getAttribute
 {
     my ( $this, $attributeName ) = @_;
-    $this->{attributes}->{$attributeName} || throw Net::RRP::Exception::MissingRequiredAttribute();
+    $this->{attributes}->{ lc ( $attributeName ) } || throw Net::RRP::Exception::MissingRequiredAttribute();
 }
 
 =head2 getAttributes
@@ -100,6 +102,18 @@ sub getAttributes
 {
     my $this = shift;
     $this->{attributes};
+}
+
+=head2 getPrimaryAttributeValue
+
+return a "primary" attribute value
+
+=cut
+
+sub getPrimaryAttributeValue
+{
+    my $this = shift;
+    $this->getAttribute ( $this->getName . 'Name' );
 }
 
 1;

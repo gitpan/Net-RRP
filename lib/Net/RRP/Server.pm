@@ -7,8 +7,7 @@ sub getName { 'Timeout' };
 package Net::RRP::Server;
 
 use strict;
-#use Net::Daemon::SSL;
-use Net::Daemon;
+use Data::Dumper;
 
 use Net::RRP::Codec;
 use Net::RRP::Protocol;
@@ -19,8 +18,9 @@ use Net::RRP::Exception::InvalidCommandSequence;
 use Net::RRP::Response::n420;
 use Net::RRP::Response::n200;
 
-#@Net::RRP::Server::ISA = qw (Net::Daemon::SSL);
-@Net::RRP::Server::ISA = qw (Net::Daemon);
+use Proc::Application::Daemon;
+use base qw(Proc::Application::Daemon);
+
 $Net::RRP::Server::VERSION = '0.1';
 
 #                                      |
@@ -58,20 +58,35 @@ use constant INIT_STATE => 'PRE';
 use constant DONE_STATE => 'DIS';
 use constant STATES     => { PRE  => { Session  => { 1 => 'WFC', 0 => 'WFR' },
 				       Quit     => { 1 => 'DIS', 0 => 'DIS' }, },
-			     DFR  => { Session  => { 1 => 'WFC', 0 => 'DIS' }, },
+			     WFR  => { Session  => { 1 => 'WFC', 0 => 'DIS' },
+				       Quit     => { 1 => 'DIS', 0 => 'DIS' }, },
 			     WFC  => { Quit     => { 1 => 'DIS', 0 => 'DIS' },
 				       Add      => { 1 => 'WFC', 0 => 'WFC' },
 				       Check    => { 1 => 'WFC', 0 => 'WFC' },
-				       Delete   => { 1 => 'WFC', 0 => 'WFC' },
+				       Del      => { 1 => 'WFC', 0 => 'WFC' },
 				       Describe => { 1 => 'WFC', 0 => 'WFC' },
 				       Mod      => { 1 => 'WFC', 0 => 'WFC' },
 				       Quit     => { 1 => 'DIS', 0 => 'DIS' },
 				       Renew    => { 1 => 'WFC', 0 => 'WFC' },
-				       Session  => { 1 => 'WFC', 0 => 'WFC' },
+				       Session  => { 1 => 'WFC', 0 => 'WFR' },
 				       Status   => { 1 => 'WFC', 0 => 'WFC' },
 				       Transfer => { 1 => 'WFC', 0 => 'WFC' } },
 			     DIS => {}, # there are virtual states
 			     EXE => {} };
+
+use constant EXCEPTION_STATES => { 'PRE' => 'WFR',
+				   'WFR' => 'DIS' };
+sub setStates
+{
+    my $this = shift;
+    $this->{states} = STATES;
+}
+
+sub getStates
+{
+    my $this = shift;
+    return $this->{states};
+}
 
 sub execute
 {
@@ -92,24 +107,34 @@ sub getHelloInfo
 sub _logException
 {
     my ( $this, $exception ) = @_;
-    return unless $this->{debug};
     $this->Log ( 'debug', "$$: file " . $exception->file . " line " . $exception->line );
     $this->Log ( 'debug', "$$: trace " . $exception->stacktrace );
-    $this->Log ( 'debug', "$$: catch exception $exception with code " . $exception->value() );
-    $this->Log ( 'debug', "$$: exception object " . $exception->object ) if $exception->object;
+    $this->Log ( 'debug', "$$: catch exception $exception with code " . $exception->value() ) if $exception->value();
+    $this->Log ( 'debug', "$$: exception object " . Data::Dumper->Dump ( [ $exception->object ], [ 'exception information' ] ) ) if $exception->object;
 }
 
-sub Run
+sub getProtocol
+{
+    my $this = shift;
+    $this->{protocol};
+}
+
+sub handler
 {
     my $this = shift;
 
-    $this->Log ( 'notice', "$$: connecttion from: %s", $this->{socket}->peerhost );
+    my $socket = $this->socket();
+    $this->Log ( 'notice', "$$: connecttion from: %s", $socket->peerhost );
 
-    my $protocol   = new Net::RRP::Protocol ( socket => $this->{socket} );
+    $this->setStates ();
+
+    my $protocol   = new Net::RRP::Protocol ( socket => $socket );
     $protocol->sendHello ( $this->getHelloInfo() );
 	
     my $state  = INIT_STATE;
-    my $states = STATES;
+    my $states = $this->getStates ();
+
+    $this->{protocol} = $protocol;
 
     while ( 1 )
     {
@@ -119,17 +144,27 @@ sub Run
 
 	try
 	{
-	    local $Error::Debug = 1 if $this->{debug};
+	    #local $Error::Debug = 1 if $this->{options}->{debug};
+            my $subState = undef;
+            my $request  = undef;
+	    my $prevState;
+
 	    try
 	    {
-		my $request = $protocol->getRequest ();
+		$prevState = $state;
+
+ 		my $requestBuffer = $protocol->_getLinesFromSocket();
+		$request = $protocol->{codec}->decodeRequest ( $requestBuffer );
+		#$request = $protocol->getRequest ();
+		$this->Debug ( "rrp request buffer is\n$requestBuffer" );
+
 		my $requestName = $request->getName();
 		$this->Log ( 'notice', "$$: get %s request", $requestName );
-		my $subState = $states->{ $state }->{ $requestName };
+                $subState = $states->{ $state }->{ $requestName };
 		throw Net::RRP::Exception::InvalidCommandSequence () unless $subState;
 		$state = 'EXE';
 		$response = $this->execute ( $request );
-		$state = $subState->{ $request->isSuccessResponse ( $response ) };
+		$state = $subState->{ $request->isSuccessResponse ( $response ) || 0 };
 	    }
 	    catch Net::RRP::Exception with
 	    {
@@ -137,10 +172,24 @@ sub Run
 		$this->_logException ( $exception );
 		last if ( $exception->isa ( 'Net::RRP::Exception::IOError') );
 		$response = Net::RRP::Response->newFromException ( $exception );
+                $this->Log ( 'debug',  "$$: rrp state before exception: $state" );
+		if ( $subState )
+		{
+		    $state = $subState->{ $request->isSuccessResponse ( $response ) || 0 };
+		}
+		else
+		{
+		    my $checkState = EXCEPTION_STATES->{ $prevState };
+		    $state = $checkState ? $checkState : $prevState;
+		}
+                $this->Log ( 'debug',  "$$: rrp state after exception: $state" );
 	    };
+
 	}
 	otherwise
 	{
+	    my $exception = shift;
+            $this->_logException ( $exception );
 	    $response = new Net::RRP::Response::n420;
 	    $response->setDescription ( 'internal server error' );
 	    $state = DONE_STATE;

@@ -1,23 +1,23 @@
-package Net::RRP::Request::Delete;
+package Net::RRP::Request::Del;
 
 use strict;
 use Net::RRP::Request;
 use Net::RRP::Exception::InvalidEntityValue;
 use Net::RRP::Exception::InvalidCommandOption;
 
-@Net::RRP::Request::Delete::ISA = qw(Net::RRP::Request);
-$Net::RRP::Request::Delete::VERSION = '0.1';
+@Net::RRP::Request::Del::ISA = qw(Net::RRP::Request);
+$Net::RRP::Request::Del::VERSION = '0.1';
 
 =head1 NAME
 
-Net::RRP::Request::Delete - rrp delete request representation.
+Net::RRP::Request::Del - rrp delete request representation.
 
 =head1 SYNOPSIS
 
- use Net::RRP::Request::Delete;
- my $deleteRequest = new Net::RRP::Request::Delete
+ use Net::RRP::Request::Del;
+ my $deleteRequest = new Net::RRP::Request::Del
     ( entity  => new Net::RRP::Entity::Domain  ( DomainName => [ 'domain.ru' ] ) );
- my $deleteRequest1 = new Net::RRP::Request::Delete ();
+ my $deleteRequest1 = new Net::RRP::Request::Del ();
  $deleteRequest1->setEntity ( new Net::RRP::Entity::Domain ( DomainName => [ 'domain.ru' ] ) );
 
 =head1 DESCRIPTION
@@ -28,11 +28,11 @@ This is a rrp delete request representation class.
 
 =head2 getName
 
-return a 'Delete'
+return a 'Del'
 
 =cut
 
-sub getName { 'Delete' };
+sub getName { 'Del' };
 
 =head2 setEntity
 
@@ -44,25 +44,33 @@ sub setEntity
 {
     my ( $this, $entity ) = @_;
     my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue ();
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } ||
-	throw Net::RRP::Exception::InvalidEntityValue ();
+    { 'Net::RRP::Entity::Domain'     => 1,
+      'Net::RRP::Entity::NameServer' => 1,
+      'Net::RRP::Entity::Registrar'  => 1,
+      'Net::RRP::Entity::Replica'    => 1,
+      'Net::RRP::Entity::Owner'      => 1,
+      'Net::RRP::Entity::Contact'    => 1 }->{ $ref } || throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 
 =head2 setOption
 
-throw Net::RRP::Exception::InvalidCommandOption () immediate
+Pass to parent method for Registrar and Serial options,
+throw Net::RRP::Exception::InvalidCommandOption () immediate if other option
 
 =cut
 
 sub setOption
 {
+    my ( $this, $key, $value ) = @_;
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'registrar';
+    return $this->SUPER::setOption ( $key => $value ) if lc ( $key ) eq 'serial';
     throw Net::RRP::Exception::InvalidCommandOption ();
 }
 
 =head1 AUTHOR AND COPYRIGHT
 
- Net::RRP::Request::Delete (C) Michael Kulakov, Zenon N.S.P. 2000
+ Net::RRP::Request::Del (C) Michael Kulakov, Zenon N.S.P. 2000
                         125124, 19, 1-st Jamskogo polja st,
                         Moscow, Russian Federation
 

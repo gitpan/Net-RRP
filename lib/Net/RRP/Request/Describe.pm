@@ -50,7 +50,7 @@ Pass only Target option with Protocol value. Throw Net::RRP::Exception::InvalidC
 sub setOption
 {
     my ( $this, $key, $value ) = @_;
-    throw Net::RRP::Exception::InvalidCommandOption () unless ( ( $key eq 'Target' ) && ( $value eq 'Protocol' ) );
+    throw Net::RRP::Exception::InvalidCommandOption () unless ( ( lc ( $key ) eq 'target' ) && ( lc ( $value ) eq 'protocol' ) );
     $this->SUPER::setOption ( $key => $value );
 }
 

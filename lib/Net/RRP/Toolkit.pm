@@ -7,7 +7,7 @@ require Exporter;
 
 @Net::RRP::Toolkit::ISA = qw(Exporter);
 @Net::RRP::Toolkit::EXPORT_OK = qw(decodeTilde safeCall safeCopy lowerKeys pathSubtract);
-$Net::RRP::Toolkit::VERSION = (split " ", '# 	$Id: Toolkit.pm,v 1.1 2000/06/20 12:44:05 mkul Exp $	')[3];
+$Net::RRP::Toolkit::VERSION = (split " ", '# 	$Id: Toolkit.pm,v 1.3 2000/10/04 08:05:37 mkul Exp $	')[3];
 
 sub decodeTilde
 {
@@ -90,7 +90,7 @@ sub safeCopy
 	die "flock ( $fromFileNum ): $!" unless flock ( FROMFILE, LOCK_SH );
 	
 	my @stat;
-	die "stat ( $fromFileNum ): $!" unless defined ( @stat = safeCall sub { stat ( FROMFILE ) } );
+	die "stat ( $fromFileNum ): $!" unless ( @stat = safeCall sub { stat ( FROMFILE ) } );
 	
 	my $i = 0; while ( 1 ) { last unless -f ( $tmpToName = sprintf ( $tmpMask, $i++ ) ); }  # ATT! XXX EINTR && -f ??? 
 				 

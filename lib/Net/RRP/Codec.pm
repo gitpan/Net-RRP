@@ -16,8 +16,13 @@ Net::RRP::Codec - codec class for serialization/deserialization of Net::RRP::Req
 =cut
 
 use strict;
+
+use Error qw(:try);
+
+use Net::RRP::Exception;
 use Net::RRP::Exception::InvalidCommandName;
-$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.4 2000/06/26 17:41:14 mkul Exp $	')[3];
+use Net::RRP::Exception::InvalidResponseFormat;
+$Net::RRP::Codec::VERSION = (split " ", '# 	$Id: Codec.pm,v 1.12 2000/09/30 16:04:41 mkul Exp $	')[3];
 
 use constant CRLF => "\r\n";
 
@@ -55,12 +60,15 @@ Example:
 
 #'
 
+use constant NAME_SUBSCRIBE => { 'nameserver' => 'NameServer' };
+
 sub decodeRequest
 {
     my ( $this, $buffer ) = @_;
     my @lines = split CRLF, $buffer;
 
-    my $requestName = shift @lines;
+    my $requestName = lc ( shift @lines );
+    $requestName = NAME_SUBSCRIBE->{$requestName} if NAME_SUBSCRIBE->{$requestName};
     my $requestPackageName = 'Net::RRP::Request::' . ucfirst ( $requestName );
     eval "use $requestPackageName";
     throw Net::RRP::Exception::InvalidCommandName ( $buffer ) if $@;
@@ -71,8 +79,10 @@ sub decodeRequest
     if ( ( $lines[0] ne '.' ) && ( $lines[0] !~ m/^\-/ ) )
     {
 	my $entityLine = shift @lines;
-	$entityLine =~ /^EntityName:(.*)/ || throw Net::RRP::Exception::InvalidEntityValue ( $buffer );
-	my $entityPackageName = 'Net::RRP::Entity::' . ucfirst ( $1 );
+	$entityLine =~ /^EntityName:(.*)/i || throw Net::RRP::Exception::InvalidEntityValue ( $buffer );
+	my $entityName = lc ( $1 );
+	$entityName = NAME_SUBSCRIBE->{$entityName} if NAME_SUBSCRIBE->{$entityName};
+	my $entityPackageName = 'Net::RRP::Entity::' . ucfirst ( $entityName );
 	eval "use $entityPackageName";
 	throw Net::RRP::Exception::InvalidEntityValue ( $buffer ) if $@;
 	$entity = $entityPackageName->new ();
@@ -128,14 +138,28 @@ sub encodeRequest
 {
     my ( $this, $request ) = @_;
     my $buffer = lc ( $request->getName ) . CRLF;
-    my $entity = $request->getEntity;
-    if ( $entity ) 
+    my $entity = undef;
+
+    try
+    {
+	$entity = $request->getEntity;
+    }
+    catch Net::RRP::Exception with
+    {
+	my $exception = shift;
+	$exception->throw unless $exception->isa ( 'Net::RRP::Exception::MissingRequiredEntity' );
+    };
+
+    if ( $entity )
     {
 	$buffer .= 'EntityName:' . $entity->getName . CRLF;
-	my $attributes = $entity->getAttributes;
-	$buffer .= join ( CRLF, map { my $key = $_; 
+	if ( my $attributes = $entity->getAttributes )
+	{
+	    $buffer .= join ( CRLF, map { my $key = $_;
 				      my $value = $attributes->{$key};
-				      map { "$key:$_" } @{ ( ref $value ? $value : [ $value ] ) } } keys %$attributes ) . CRLF;
+				      map { "$key:$_" } @{ ( ref $value ? $value : [ $value ] ) } } keys %$attributes ) . CRLF
+					  if ( %$attributes );
+	}
     }
     my $options   = $request->getOptions;
     $buffer .= join ( CRLF, map { "-$_:" . $options->{$_} } keys %$options ) . CRLF if ( ( $options ) and ( %$options ) );
@@ -176,7 +200,17 @@ sub decodeResponse
     while ( ( $line = $lines [ $index++ ] ) && ( $line ne '.' ) )
     {
 	$line =~ m/:/ || throw Net::RRP::Exception::InvalidAttributeValueSyntax ( $buffer );
-	$response->setAttribute ( $` => $' );
+	my $result = eval { $response->getAttribute ( $` ) };
+	if ( $result )
+	{
+	    $result = [ $result ] unless ref ( $result );
+	    push @$result, $';
+	}
+	else
+	{
+	    $result = $';
+	}
+	$response->setAttribute ( $` => $result );
     }
 
     $index--;
@@ -202,7 +236,11 @@ sub encodeResponse
     my $buffer = $response->getCode . ' ' . $response->getDescription . CRLF;
     if ( my $attributes = $response->getAttributes )
     {
-	$buffer .= join ( CRLF, map { "$_:" . $attributes->{$_} } keys %$attributes ) . CRLF;
+	$buffer .= join ( CRLF, map { my $key = $_;
+				      my $value = $attributes->{$key};
+				      map { "$key:$_" } @{ ( ref $value ? $value : [ $value ] ) } } keys %$attributes ) . CRLF
+					  if ( %$attributes );
+	#$buffer .= join ( CRLF, map { "$_:" . $attributes->{$_} } keys %$attributes ) . CRLF if ( scalar ( %$attributes ) );
     }
     $buffer .= '.' . CRLF;
     $buffer;

@@ -44,8 +44,12 @@ sub setEntity
 {
     my ( $this, $entity ) = @_;
     my $ref = ref ( $entity ) || throw Net::RRP::Exception::InvalidEntityValue ();
-    { 'Net::RRP::Entity::Domain' => 1, 'Net::RRP::Entity::NameServer' => 1  }->{ $ref } ||
-	throw Net::RRP::Exception::InvalidEntityValue ();
+    {  'Net::RRP::Entity::Domain'     => 1,
+       'Net::RRP::Entity::NameServer' => 1,
+       'Net::RRP::Entity::Registrar'  => 1,
+       'Net::RRP::Entity::Replica'    => 1,
+       'Net::RRP::Entity::Owner'      => 1,
+       'Net::RRP::Entity::Contact'    => 1 }->{ $ref } || throw Net::RRP::Exception::InvalidEntityValue ();
     $this->SUPER::setEntity ( $entity );
 }
 

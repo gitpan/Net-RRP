@@ -3,7 +3,7 @@ package Net::RRP::Request;
 use strict;
 use Net::RRP::Exception::MissingCommandOption;
 use Net::RRP::Exception::MissingRequiredEntity;
-$Net::RRP::Request::VERSION = (split " ", '# 	$Id: Request.pm,v 1.2 2000/06/22 11:02:31 mkul Exp $	')[3];
+$Net::RRP::Request::VERSION = (split " ", '# 	$Id: Request.pm,v 1.4 2000/09/11 15:34:14 mkul Exp $	')[3];
 
 =head1 NAME
 
@@ -96,7 +96,7 @@ Can throw Net::RRP::Exception::MissingCommandOption() exception.
 sub getOption
 {
     my ( $this, $optionName ) = @_;
-    $this->{options}->{$optionName} || throw Net::RRP::Exception::MissingCommandOption();
+    $this->{options}->{ lc ( $optionName ) } || throw Net::RRP::Exception::MissingCommandOption();
 }
 
 =head2 setOption
@@ -111,6 +111,7 @@ Set $optionName rrp request option to the $optionValue. Example:
 sub setOption
 {
     my ( $this, $optionName, $optionValue ) = @_;
+    $optionName = lc ( $optionName );
     my $old = $this->{options}->{$optionName};
     $this->{options}->{$optionName} = $optionValue;
     $old;
@@ -146,6 +147,7 @@ Return a true if response is successfull.
 sub isSuccessResponse
 {
     my ( $this, $response ) = @_;
+    return 0 unless $response;
     return { 200 => 1, 220 => 1 }->{ $response->getCode() };
 }
 
